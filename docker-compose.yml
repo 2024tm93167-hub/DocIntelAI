@@ -1,0 +1,21 @@
+# Optional local supporting service: a containerized Ollama server so
+# AI_PROVIDER=ollama works without installing Ollama natively.
+#
+# Usage: docker compose up -d
+# Then:  docker exec -it docintel-ollama ollama pull llama3.1
+#
+# The FastAPI backend and Angular frontend are intentionally NOT
+# containerized here — running them natively (uvicorn / ng serve) gives
+# faster iteration for this research prototype.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: docintel-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

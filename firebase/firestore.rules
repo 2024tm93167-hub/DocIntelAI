@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // All application data access goes through the FastAPI backend using the
+    // Firebase Admin SDK, which bypasses these rules entirely. Direct client
+    // (browser) access to Firestore is intentionally disabled — the Angular
+    // app only uses Firebase for Authentication.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

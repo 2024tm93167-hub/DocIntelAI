@@ -1,0 +1,35 @@
+# ---- Secrets: NEVER commit these ----
+backend/.env
+.env
+**/serviceAccountKey.json
+**/*firebase-adminsdk*.json
+**/*-firebase-adminsdk-*.json
+
+# ---- Node / Angular ----
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+npm-debug.log*
+yarn-error.log*
+
+# ---- Python / FastAPI ----
+backend/venv/
+backend/.venv/
+**/__pycache__/
+*.pyc
+backend/.pytest_cache/
+backend/htmlcov/
+backend/.coverage
+
+# ---- Firebase ----
+firebase/.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+pubsub-debug.log
+
+# ---- OS / IDE ----
+.DS_Store
+.vscode/
+.idea/
+*.swp

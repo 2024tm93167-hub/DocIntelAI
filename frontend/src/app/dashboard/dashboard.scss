@@ -1,0 +1,143 @@
+.dashboard-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  background: var(--docintel-surface);
+  border-bottom: 1px solid var(--docintel-border);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.72rem;
+    color: var(--docintel-text-muted);
+  }
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, var(--docintel-primary), var(--docintel-accent));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--docintel-primary);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.menu-user-info {
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  span {
+    font-size: 0.78rem;
+    color: var(--docintel-text-muted);
+  }
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 32px;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.welcome-card {
+  padding: 28px 32px;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 1.3rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--docintel-text-muted);
+    max-width: 640px;
+    line-height: 1.5;
+  }
+}
+
+.placeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.placeholder-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  mat-icon {
+    color: var(--docintel-primary);
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  p {
+    margin: 0;
+    color: var(--docintel-text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+}
+
+.state-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 80px 20px;
+  color: var(--docintel-text-muted);
+
+  &.error mat-icon {
+    font-size: 40px;
+    width: 40px;
+    height: 40px;
+    color: var(--docintel-danger);
+  }
+}

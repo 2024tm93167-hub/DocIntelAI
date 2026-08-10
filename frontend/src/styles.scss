@@ -1,0 +1,59 @@
+@use '@angular/material' as mat;
+
+html {
+  @include mat.theme((
+    color: (
+      theme-type: light,
+      primary: mat.$blue-palette,
+      tertiary: mat.$violet-palette,
+    ),
+    typography: (
+      brand-family: 'Inter, "Helvetica Neue", Arial, sans-serif',
+      plain-family: 'Inter, "Helvetica Neue", Arial, sans-serif',
+    ),
+    density: 0,
+  ));
+}
+
+:root {
+  --docintel-bg: #f5f6f8;
+  --docintel-surface: #ffffff;
+  --docintel-border: #e3e6ec;
+  --docintel-text: #1c1f26;
+  --docintel-text-muted: #5f6673;
+  --docintel-primary: #3457d5;
+  --docintel-primary-dark: #23408f;
+  --docintel-accent: #6750a4;
+  --docintel-success: #1e8e5a;
+  --docintel-danger: #c62828;
+  --docintel-warning: #b8860b;
+  --docintel-radius: 12px;
+  --docintel-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Inter, "Helvetica Neue", Arial, sans-serif;
+  background: var(--docintel-bg);
+  color: var(--docintel-text);
+  @include mat.app-background();
+}
+
+a {
+  color: inherit;
+}
+
+.docintel-card {
+  background: var(--docintel-surface);
+  border: 1px solid var(--docintel-border);
+  border-radius: var(--docintel-radius);
+  box-shadow: var(--docintel-shadow);
+}

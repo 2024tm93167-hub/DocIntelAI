@@ -1,0 +1,70 @@
+<div class="dashboard-shell">
+  <header class="dashboard-header">
+    <div class="brand">
+      <span class="brand-mark">DI</span>
+      <div>
+        <h1>DocIntel AI</h1>
+        <p>Intelligent Writing. Smarter Versions.</p>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      @if (!loading()) {
+        <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Account menu">
+          <span class="avatar">{{ initials() }}</span>
+        </button>
+        <mat-menu #userMenu="matMenu">
+          <div class="menu-user-info">
+            <strong>{{ user()?.name ?? 'Account' }}</strong>
+            <span>{{ user()?.email }}</span>
+          </div>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Sign out</span>
+          </button>
+        </mat-menu>
+      }
+    </div>
+  </header>
+
+  <main class="dashboard-content">
+    @if (loading()) {
+      <div class="state-panel">
+        <mat-spinner diameter="32" />
+        <p>Loading your workspace…</p>
+      </div>
+    } @else if (errorMessage()) {
+      <div class="state-panel error">
+        <mat-icon>cloud_off</mat-icon>
+        <p>{{ errorMessage() }}</p>
+        <button mat-stroked-button color="primary" (click)="loadProfile()">Retry</button>
+      </div>
+    } @else {
+      <section class="welcome-card docintel-card">
+        <h2>Welcome{{ user()?.name ? ', ' + user()?.name : '' }} 👋</h2>
+        <p>
+          Your AI-assisted document workspace is ready. Document creation, the rich-text editor and
+          version history arrive in the next build phase.
+        </p>
+      </section>
+
+      <section class="placeholder-grid">
+        <div class="docintel-card placeholder-card">
+          <mat-icon>description</mat-icon>
+          <h3>My Documents</h3>
+          <p>Coming in Phase 2 — create and manage your documents here.</p>
+        </div>
+        <div class="docintel-card placeholder-card">
+          <mat-icon>history</mat-icon>
+          <h3>Version History</h3>
+          <p>Coming in Phase 3 — track every meaningful revision.</p>
+        </div>
+        <div class="docintel-card placeholder-card">
+          <mat-icon>auto_awesome</mat-icon>
+          <h3>AI Assistant</h3>
+          <p>Coming in Phase 4 — rewrite, summarize and improve your writing.</p>
+        </div>
+      </section>
+    }
+  </main>
+</div>
