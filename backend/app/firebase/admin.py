@@ -3,6 +3,7 @@
 All Firebase-specific wiring is isolated here so the rest of the backend
 (business services, repositories) never touches the Admin SDK directly.
 """
+import json
 from threading import RLock
 
 import firebase_admin
@@ -23,7 +24,10 @@ def init_firebase() -> firebase_admin.App:
     with _initialization_lock:
         if _firebase_app is None:
             settings = get_settings()
-            cred = credentials.Certificate(settings.firebase_service_account_path)
+            if settings.firebase_service_account_json:
+                cred = credentials.Certificate(json.loads(settings.firebase_service_account_json))
+            else:
+                cred = credentials.Certificate(settings.firebase_service_account_path)
             options = {"projectId": settings.firebase_project_id} if settings.firebase_project_id else {}
             _firebase_app = firebase_admin.initialize_app(cred, options)
         return _firebase_app

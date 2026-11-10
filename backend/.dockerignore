@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+serviceAccountKey.json
+*.json.key
+tests/
+scripts/
+run.bat
+run.sh
+Dockerfile
+.dockerignore

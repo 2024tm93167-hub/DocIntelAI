@@ -4,6 +4,8 @@ backend/.env
 **/serviceAccountKey.json
 **/*firebase-adminsdk*.json
 **/*-firebase-adminsdk-*.json
+*.pem
+*.key
 
 # ---- Node / Angular ----
 frontend/node_modules/

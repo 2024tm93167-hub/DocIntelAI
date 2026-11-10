@@ -13,6 +13,7 @@ class Settings(BaseSettings):
 
     # Firebase Admin SDK
     firebase_service_account_path: str = "serviceAccountKey.json"
+    firebase_service_account_json: str | None = None
     firebase_project_id: str | None = None
 
     # CORS
