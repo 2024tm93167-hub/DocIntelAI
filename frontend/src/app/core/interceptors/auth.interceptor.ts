@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { from, switchMap } from 'rxjs';
@@ -7,7 +8,11 @@ import { AuthService } from '../services/auth.service';
 
 /** Attaches the current Firebase ID token to every request sent to the DocIntel AI backend. */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  if (!req.url.startsWith(environment.apiBaseUrl)) {
+  const apiUrl = new URL(environment.apiBaseUrl);
+  const requestUrl = new URL(req.url, inject(DOCUMENT).baseURI);
+  const apiPath = apiUrl.pathname.replace(/\/$/, '');
+  if (requestUrl.origin !== apiUrl.origin ||
+      (requestUrl.pathname !== apiPath && !requestUrl.pathname.startsWith(`${apiPath}/`))) {
     return next(req);
   }
 

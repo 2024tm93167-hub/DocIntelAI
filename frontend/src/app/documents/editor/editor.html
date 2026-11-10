@@ -1,0 +1,671 @@
+<div class="editor-shell">
+  <header class="editor-header">
+    <div class="editor-header-left">
+      <button mat-icon-button (click)="goBack()" aria-label="Back to dashboard" matTooltip="Back to documents">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="document-identity">
+        <input class="title-input" [formControl]="titleControl" maxlength="200"
+          placeholder="Untitled document" aria-label="Document title" matTooltip="Click to rename" />
+        <span class="save-status" [attr.data-status]="saveStatus()" role="status">
+          @switch (saveStatus()) {
+            @case ('unsaved') { Unsaved changes }
+            @case ('saving') { Saving… }
+            @case ('saved') { All changes saved }
+            @case ('error') { Save failed — draft kept locally }
+            @case ('conflict') { Conflict — review local changes }
+          }
+        </span>
+      </div>
+    </div>
+    <div class="editor-header-right">
+      <div class="collaborator-avatars" aria-label="Connected collaborators">
+        @for (person of presenceUsers().slice(0, 3); track $index) {
+          <span class="collaborator-avatar" [matTooltip]="person.name || person.email || 'Collaborator'"
+            [style.background]="person.color || null" [style.color]="person.color ? '#fff' : null">
+            {{ (person.name || person.email || 'C').slice(0, 1).toUpperCase() }}
+          </span>
+        }
+      </div>
+      <button mat-stroked-button (click)="openShareDialog()" [disabled]="!document()" aria-label="Share document">Share</button>
+      <button mat-flat-button (click)="toggleSidePanel('ai')" [attr.aria-expanded]="sidePanelOpen() && sidePanelTab() === 'ai'">
+        <mat-icon>auto_awesome</mat-icon> AI Assistant
+      </button>
+      <button mat-icon-button [matMenuTriggerFor]="documentMenu" aria-label="Document options" matTooltip="Document options">
+        <mat-icon>more_horiz</mat-icon>
+      </button>
+      <mat-menu #documentMenu="matMenu">
+        <button mat-menu-item (click)="openSaveVersionDialog()" [disabled]="savingVersion() || editingLocked() || autosave.hasUnsavedChanges()"><mat-icon>bookmark_add</mat-icon>Save version</button>
+        <button mat-menu-item (click)="openSidePanel('versions')"><mat-icon>history</mat-icon>Version history</button>
+        <button mat-menu-item (click)="openSidePanel('suggestions')"><mat-icon>spellcheck</mat-icon>Writing suggestions</button>
+        <button mat-menu-item (click)="openSidePanel('stats')"><mat-icon>analytics</mat-icon>Stats &amp; research metrics</button>
+        <button mat-menu-item (click)="exportDocument('docx')"><mat-icon>download</mat-icon>Export Word (.docx)</button>
+        <button mat-menu-item (click)="exportDocument('pdf')">Export PDF</button>
+        <button mat-menu-item (click)="exportDocument('markdown')">Export Markdown</button>
+        <button mat-menu-item (click)="exportDocument('html')">Export HTML</button>
+        <button mat-menu-item (click)="exportDocument('text')">Export plain text</button>
+      </mat-menu>
+    </div>
+  </header>
+
+  @if (autosave.errorMessage()) {
+    <div class="save-recovery" role="alert">
+      <p>{{ autosave.errorMessage() }}</p>
+      <div class="recovery-actions">
+        @if (saveStatus() === 'error') {
+          <button mat-stroked-button (click)="autosave.retry()">Retry saving</button>
+        }
+        <button mat-stroked-button (click)="downloadLocalDraft()">Download local draft</button>
+        <button mat-stroked-button (click)="reloadLatestDocument()">Load latest</button>
+      </div>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="state-panel">
+      <mat-spinner diameter="32" />
+      <p>Opening document…</p>
+    </div>
+  } @else if (loadError()) {
+    <div class="state-panel error">
+      <mat-icon>cloud_off</mat-icon>
+      <p>{{ loadError() }}</p>
+      <button mat-stroked-button color="primary" (click)="goBack()">Back to dashboard</button>
+    </div>
+  } @else {
+    <fieldset class="editor-toolbar" [disabled]="editingLocked()" aria-label="Document formatting">
+      <div class="toolbar-group">
+        <button mat-icon-button (click)="undo()" aria-label="Undo" matTooltip="Undo">
+          <mat-icon>undo</mat-icon>
+        </button>
+        <button mat-icon-button (click)="redo()" aria-label="Redo" matTooltip="Redo">
+          <mat-icon>redo</mat-icon>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button class="toolbar-select style-select" [matMenuTriggerFor]="styleMenu" matTooltip="Paragraph style">
+          <span>{{ headingLabel(toolbar().heading) }}</span>
+          <mat-icon class="caret">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #styleMenu="matMenu" panelClass="docintel-toolbar-menu">
+          @for (level of headingLevels; track level) {
+            <button
+              mat-menu-item
+              [class.active]="toolbar().heading === level"
+              [class.style-h1]="level === 1"
+              [class.style-h2]="level === 2"
+              [class.style-h3]="level === 3"
+              (click)="setHeadingLevel(level)">
+              {{ headingLabel(level) }}
+            </button>
+          }
+        </mat-menu>
+
+        <button class="toolbar-select font-select" [matMenuTriggerFor]="fontMenu" matTooltip="Font family">
+          <span>{{ fontFamilyLabel(toolbar().fontFamily) }}</span>
+          <mat-icon class="caret">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #fontMenu="matMenu" panelClass="docintel-toolbar-menu">
+          @for (font of fontFamilyOptions; track font.value) {
+            <button
+              mat-menu-item
+              [style.font-family]="font.value || null"
+              [class.active]="toolbar().fontFamily === font.value"
+              (click)="setFontFamily(font.value)">
+              {{ font.label }}
+            </button>
+          }
+        </mat-menu>
+
+        <button class="toolbar-select size-select" [matMenuTriggerFor]="sizeMenu" matTooltip="Font size">
+          <span>{{ fontSizeLabel(toolbar().fontSize) }}</span>
+          <mat-icon class="caret">arrow_drop_down</mat-icon>
+        </button>
+        <mat-menu #sizeMenu="matMenu" panelClass="docintel-toolbar-menu">
+          <button mat-menu-item (click)="resetFontSize()">Default</button>
+          @for (size of fontSizeOptions; track size) {
+            <button mat-menu-item [class.active]="toolbar().fontSize === size" (click)="setFontSize(size)">
+              {{ size.replace('px', '') }}
+            </button>
+          }
+        </mat-menu>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button
+          mat-icon-button
+          [class.active]="toolbar().bold"
+          (click)="toggleBold()"
+          aria-label="Bold"
+          matTooltip="Bold">
+          <mat-icon>format_bold</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().italic"
+          (click)="toggleItalic()"
+          aria-label="Italic"
+          matTooltip="Italic">
+          <mat-icon>format_italic</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().underline"
+          (click)="toggleUnderline()"
+          aria-label="Underline"
+          matTooltip="Underline">
+          <mat-icon>format_underlined</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().strike"
+          (click)="toggleStrike()"
+          aria-label="Strikethrough"
+          matTooltip="Strikethrough">
+          <mat-icon>strikethrough_s</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().code"
+          (click)="toggleCode()"
+          aria-label="Inline code"
+          matTooltip="Inline code">
+          <mat-icon>code</mat-icon>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button mat-icon-button [matMenuTriggerFor]="colorMenu" aria-label="Text color" matTooltip="Text color">
+          <mat-icon [style.color]="toolbar().color || null">format_color_text</mat-icon>
+        </button>
+        <mat-menu #colorMenu="matMenu" panelClass="docintel-color-menu">
+          <div class="color-grid" (click)="$event.stopPropagation()">
+            @for (c of textColorPalette; track c) {
+              <button
+                class="color-swatch"
+                [style.background]="c"
+                [class.active]="toolbar().color === c"
+                (click)="setTextColor(c)"
+                [attr.aria-label]="'Color ' + c"></button>
+            }
+          </div>
+          <div class="color-menu-actions" (click)="$event.stopPropagation()">
+            <label class="custom-color">
+              <input type="color" (change)="setTextColor($any($event.target).value)" />
+              <span>Custom</span>
+            </label>
+            <button mat-button (click)="resetTextColor()">Reset</button>
+          </div>
+        </mat-menu>
+
+        <button mat-icon-button [matMenuTriggerFor]="highlightMenu" aria-label="Highlight color" matTooltip="Highlight color">
+          <mat-icon [style.color]="toolbar().highlight || null">format_color_fill</mat-icon>
+        </button>
+        <mat-menu #highlightMenu="matMenu" panelClass="docintel-color-menu">
+          <div class="color-grid" (click)="$event.stopPropagation()">
+            @for (c of highlightPalette; track c) {
+              <button
+                class="color-swatch"
+                [style.background]="c"
+                [class.active]="toolbar().highlight === c"
+                (click)="setHighlightColor(c)"
+                [attr.aria-label]="'Highlight ' + c"></button>
+            }
+          </div>
+          <div class="color-menu-actions" (click)="$event.stopPropagation()">
+            <label class="custom-color">
+              <input type="color" (change)="setHighlightColor($any($event.target).value)" />
+              <span>Custom</span>
+            </label>
+            <button mat-button (click)="resetHighlight()">None</button>
+          </div>
+        </mat-menu>
+
+        <button
+          mat-icon-button
+          class="script-btn"
+          [class.active]="toolbar().subscript"
+          (click)="toggleSubscript()"
+          aria-label="Subscript"
+          matTooltip="Subscript">
+          <span class="script-label">X<sub>2</sub></span>
+        </button>
+        <button
+          mat-icon-button
+          class="script-btn"
+          [class.active]="toolbar().superscript"
+          (click)="toggleSuperscript()"
+          aria-label="Superscript"
+          matTooltip="Superscript">
+          <span class="script-label">X<sup>2</sup></span>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button mat-icon-button [matMenuTriggerFor]="alignMenu" aria-label="Align" matTooltip="Align">
+          <mat-icon>{{ alignIcon(toolbar().align) }}</mat-icon>
+        </button>
+        <mat-menu #alignMenu="matMenu" panelClass="docintel-toolbar-menu">
+          <button mat-menu-item [class.active]="toolbar().align === 'left'" (click)="setAlign('left')">
+            <mat-icon>format_align_left</mat-icon>
+            <span>Left</span>
+          </button>
+          <button mat-menu-item [class.active]="toolbar().align === 'center'" (click)="setAlign('center')">
+            <mat-icon>format_align_center</mat-icon>
+            <span>Center</span>
+          </button>
+          <button mat-menu-item [class.active]="toolbar().align === 'right'" (click)="setAlign('right')">
+            <mat-icon>format_align_right</mat-icon>
+            <span>Right</span>
+          </button>
+          <button mat-menu-item [class.active]="toolbar().align === 'justify'" (click)="setAlign('justify')">
+            <mat-icon>format_align_justify</mat-icon>
+            <span>Justify</span>
+          </button>
+        </mat-menu>
+
+        <button mat-icon-button [matMenuTriggerFor]="spacingMenu" aria-label="Line spacing" matTooltip="Line spacing">
+          <mat-icon>format_line_spacing</mat-icon>
+        </button>
+        <mat-menu #spacingMenu="matMenu" panelClass="docintel-toolbar-menu">
+          @for (lh of lineHeightOptions; track lh.value) {
+            <button mat-menu-item (click)="setLineHeight(lh.value)">{{ lh.label }}</button>
+          }
+        </mat-menu>
+
+        <button mat-icon-button (click)="outdentSelection()" aria-label="Decrease indent" matTooltip="Decrease indent">
+          <mat-icon>format_indent_decrease</mat-icon>
+        </button>
+        <button mat-icon-button (click)="indentSelection()" aria-label="Increase indent" matTooltip="Increase indent">
+          <mat-icon>format_indent_increase</mat-icon>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button
+          mat-icon-button
+          [class.active]="toolbar().bulletList"
+          (click)="toggleBulletList()"
+          aria-label="Bullet list"
+          matTooltip="Bullet list">
+          <mat-icon>format_list_bulleted</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().orderedList"
+          (click)="toggleOrderedList()"
+          aria-label="Numbered list"
+          matTooltip="Numbered list">
+          <mat-icon>format_list_numbered</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().taskList"
+          (click)="toggleTaskList()"
+          aria-label="Checklist"
+          matTooltip="Checklist">
+          <mat-icon>checklist</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          [class.active]="toolbar().blockquote"
+          (click)="toggleBlockquote()"
+          aria-label="Blockquote"
+          matTooltip="Blockquote">
+          <mat-icon>format_quote</mat-icon>
+        </button>
+        <button
+          mat-icon-button
+          (click)="setLink()"
+          aria-label="Link"
+          matTooltip="Link">
+          <mat-icon>link</mat-icon>
+        </button>
+      </div>
+
+      <div class="toolbar-divider"></div>
+
+      <div class="toolbar-group">
+        <button mat-icon-button [matMenuTriggerFor]="imageMenu" aria-label="Insert image" matTooltip="Insert image">
+          <mat-icon>image</mat-icon>
+        </button>
+        <mat-menu #imageMenu="matMenu" panelClass="docintel-toolbar-menu">
+          <button mat-menu-item (click)="triggerImageUpload()">
+            <mat-icon>upload</mat-icon>
+            <span>Upload from device</span>
+          </button>
+          <button mat-menu-item (click)="insertImageFromUrl()">
+            <mat-icon>link</mat-icon>
+            <span>Image via URL</span>
+          </button>
+        </mat-menu>
+
+        <button mat-icon-button [matMenuTriggerFor]="tableMenu" aria-label="Table" matTooltip="Table">
+          <mat-icon>table_chart</mat-icon>
+        </button>
+        <mat-menu #tableMenu="matMenu" panelClass="docintel-toolbar-menu">
+          <button mat-menu-item (click)="insertTable()">
+            <mat-icon>add_box</mat-icon>
+            <span>Insert table</span>
+          </button>
+          <button mat-menu-item (click)="addRowAfter()">Add row below</button>
+          <button mat-menu-item (click)="addColumnAfter()">Add column right</button>
+          <button mat-menu-item (click)="deleteRow()">Delete row</button>
+          <button mat-menu-item (click)="deleteColumn()">Delete column</button>
+          <button mat-menu-item (click)="deleteTable()">Delete table</button>
+        </mat-menu>
+
+        <button mat-icon-button (click)="insertHorizontalRule()" aria-label="Horizontal rule" matTooltip="Horizontal rule">
+          <mat-icon>horizontal_rule</mat-icon>
+        </button>
+
+        <button mat-icon-button (click)="clearFormatting()" aria-label="Clear formatting" matTooltip="Clear formatting">
+          <mat-icon>format_clear</mat-icon>
+        </button>
+      </div>
+
+    </fieldset>
+
+    <input #fileInput type="file" accept="image/*" hidden (change)="onImageFileSelected($event)" />
+
+    <div class="editor-body" [class.panel-open]="sidePanelOpen()">
+      <div class="document-workspace" [class.fit-page]="fitPage()">
+        <article class="editor-canvas" aria-label="Document page" [style.zoom]="fitPage() ? 1 : zoom() / 100">
+          <div #editorElement class="tiptap-editor"></div>
+        </article>
+      </div>
+
+      @if (sidePanelOpen()) {
+        <div
+          class="side-panel-resizer"
+          [class.dragging]="panelResizing()"
+          (pointerdown)="startPanelResize($event)"
+          (keydown)="resizePanelWithKeyboard($event)"
+          tabindex="0"
+          role="separator"
+          aria-orientation="vertical"
+          aria-valuemin="260"
+          [attr.aria-valuemax]="panelMaxWidth()"
+          [attr.aria-valuenow]="sidePanelWidth()"
+          title="Drag to resize, or use the left and right arrow keys"
+          aria-label="Resize side panel"></div>
+        <aside class="side-panel" [style.width.px]="sidePanelWidth()">
+          <div class="side-panel-header">
+            <div class="side-panel-tabs">
+              <button
+                class="tab"
+                [class.active]="sidePanelTab() === 'versions'"
+                (click)="openSidePanel('versions')">
+                <mat-icon>history</mat-icon>
+                History
+              </button>
+              <button
+                class="tab"
+                [class.active]="sidePanelTab() === 'ai'"
+                (click)="sidePanelTab.set('ai')">
+                <mat-icon>auto_awesome</mat-icon>
+                AI
+              </button>
+              <button
+                class="tab"
+                [class.active]="sidePanelTab() === 'suggestions'"
+                (click)="openSidePanel('suggestions')">
+                <mat-icon>lightbulb_outline</mat-icon>
+                Suggestions
+              </button>
+              <button
+                class="tab"
+                [class.active]="sidePanelTab() === 'stats'"
+                (click)="openSidePanel('stats')">
+                <mat-icon>analytics</mat-icon>
+                Stats
+              </button>
+            </div>
+            <button mat-icon-button (click)="closeSidePanel()" aria-label="Close side panel">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+
+          <div class="side-panel-body">
+            @if (sidePanelTab() === 'versions') {
+              <app-version-history
+                [versions]="versions()" [loading]="versionsLoading()" [currentUserId]="currentUserId()"
+                [busy]="editingLocked() || savingVersion()"
+                [unsaved]="autosave.hasUnsavedChanges()" [errorMessage]="versionError()"
+                [previewText]="snapshotPreview()" (preview)="previewVersion($event)"
+                (compare)="showDiff($event.version, $event.compareTo)"
+                (restore)="restoreVersion($event)" (remove)="deleteVersion($event)"
+                (reload)="reloadLatestDocument()" />
+            } @else if (sidePanelTab() === 'ai') {
+              <div class="ai-panel">
+                <div class="assistant-heading"><mat-icon>auto_awesome</mat-icon><h2>Writing assistant</h2></div>
+                <p class="assistant-intro">Your ideas, thoughtfully refined. Review every change before it reaches the page.</p>
+                <div class="selection-context">
+                  <span>Working with {{ selectedPreview() ? 'selected text' : 'document context' }}</span>
+                  @if (selectedPreview()) { <blockquote>{{ selectedPreview() }}</blockquote> }
+                </div>
+                @if (!aiOutput() && !aiLoading() && !titlesLoading() && !titleOptions().length) {
+                <div class="ai-composer" [class.disabled]="editingLocked()">
+                  <textarea
+                    #composerInput
+                    class="composer-input"
+                    [formControl]="aiInstruction"
+                    rows="5"
+                    maxlength="500"
+                    [placeholder]="composerPlaceholder()"
+                    aria-label="AI instruction"
+                    (keydown)="onComposerKeydown($event)"></textarea>
+                  <div class="composer-footer">
+                    <span class="composer-hint">Enter to send · Shift+Enter for a new line</span>
+                    <div class="composer-buttons">
+                      <button
+                        type="button"
+                        class="composer-chip"
+                        [matMenuTriggerFor]="aiActionsMenu"
+                        [disabled]="aiLoading() || editingLocked()"
+                        aria-label="Writing actions"
+                        matTooltip="Writing actions">
+                        <mat-icon>auto_awesome</mat-icon>Actions
+                      </button>
+                      <mat-menu #aiActionsMenu="matMenu" class="ai-actions-menu">
+                        @for (action of quickActions; track action.mode) {
+                          <button
+                            type="button"
+                            mat-menu-item
+                            [disabled]="aiLoading() || editingLocked()"
+                            (click)="runQuickAction(action.mode)">{{ action.label }}</button>
+                        }
+                      </mat-menu>
+                      <button
+                        type="button"
+                        class="composer-send"
+                        (click)="runCustom()"
+                        [disabled]="aiLoading() || editingLocked() || !aiInstruction.value.trim()"
+                        aria-label="Send instruction"
+                        matTooltip="Send instruction (Enter)">
+                        <mat-icon>arrow_upward</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="ai-secondary" aria-label="Tone options">
+                  <span class="secondary-label">Tone</span>
+                  @for (tone of aiTones; track tone) {
+                    <button type="button" class="composer-chip subtle" (click)="runTone(tone)"
+                      [disabled]="aiLoading() || editingLocked()">{{ tone | titlecase }}</button>
+                  }
+                  <button type="button" class="composer-chip subtle" (click)="runSimplify()"
+                    [disabled]="aiLoading() || editingLocked()">Simplify</button>
+                </div>
+
+                <div class="ai-links">
+                  <button type="button" class="link-btn" (click)="runQuickAction('generate')"
+                    [disabled]="aiLoading() || editingLocked()">Write a new draft</button>
+                  <button type="button" class="link-btn" (click)="suggestTitle()"
+                    [disabled]="titlesLoading() || editingLocked()">Suggest document title</button>
+                </div>
+
+                @if (aiMode() === 'summarize') {
+                  <mat-form-field appearance="outline" class="ai-field">
+                    <mat-label>Max words</mat-label>
+                    <input matInput type="number" [formControl]="aiMaxWords" min="10" max="1000" />
+                  </mat-form-field>
+                }
+
+                }
+                @if (titlesLoading()) { <p role="status">Finding titles for your document…</p> }
+                @if (titleOptions().length) {
+                  <section class="title-options" aria-label="Suggested titles">
+                    <h3>Suggested titles</h3>
+                    @for (title of titleOptions(); track title) { <button (click)="chooseTitle(title)">{{ title }}</button> }
+                    <p>Choose a title to rename the document. The page content stays unchanged.</p>
+                    <button mat-button (click)="titleOptions.set([])">Discard titles</button>
+                  </section>
+                }
+                @if (aiLoading()) {
+                  <div class="generation-status" role="status"><mat-spinner diameter="24" /><p>{{ aiResultLabel() }} — working on your writing…</p></div>
+                  <button mat-stroked-button class="ai-stop" (click)="stopAi()">
+                    <span class="button-content">
+                      <mat-icon>stop</mat-icon>
+                      Stop
+                    </span>
+                  </button>
+                }
+
+                @if (aiError()) {
+                  <p role="alert">{{ aiError() }}</p>
+                }
+
+                @if (aiOutput()) {
+                  <div class="ai-output">
+                    <h4>{{ aiResultLabel() }} · Preview</h4>
+                    <div class="ai-output-text" [innerHTML]="aiPreviewHtml()"></div>
+                    <div class="ai-output-actions">
+                      <button mat-flat-button (click)="insertAtCursor()" [disabled]="aiLoading() || !!aiError() || editingLocked()">Insert at cursor</button>
+                      <button mat-stroked-button (click)="insertAiOutput()" [disabled]="aiLoading() || !!aiError() || editingLocked()">Insert below</button>
+                      @if (aiMode() !== 'generate' && aiMode() !== 'continue' && aiMode() !== 'outline' && aiMode() !== 'headings') {
+                        <button mat-stroked-button (click)="applyAiOutput()" [disabled]="aiLoading() || !!aiError() || editingLocked()">{{ replaceLabel() }}</button>
+                      }
+                    </div>
+                    <div class="preview-tools">
+                      <button mat-button (click)="copyAiOutput()">Copy</button>
+                      <button mat-button (click)="runAi()" [disabled]="aiLoading() || editingLocked()">Regenerate</button>
+                      <button mat-button (click)="rejectAiOutput()">Discard</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else if (sidePanelTab() === 'suggestions') {
+              <app-suggestion-list
+                [suggestions]="suggestions()" [loading]="suggestionsLoading()"
+                [busy]="editingLocked() || savingVersion()"
+                [unsaved]="autosave.hasUnsavedChanges()"
+                [errorMessage]="suggestionsError()" [analyzed]="analysisPerformed()"
+                [selectionActive]="!!selectedPreview()"
+                [analyzing]="analyzing()" (analyze)="analyzeDocument()"
+                (accept)="acceptSuggestion($event)"
+                (reject)="rejectSuggestion($event)"
+                (remove)="deleteSuggestion($event)"
+                (reload)="loadSuggestions()" />
+            } @else {
+              <div class="stats-panel">
+                <h2>Document insights</h2>
+                <details class="research-metrics">
+                  <summary>Research metrics</summary>
+                  <p>Opt-in activity counts only. No document text is included in the download.</p>
+                  <button mat-stroked-button (click)="toggleMetrics()" [attr.aria-pressed]="metricsEnabled()">{{ metricsEnabled() ? 'Stop recording' : 'Start recording' }}</button>
+                  <button mat-button (click)="exportMetrics()">Export metrics JSON</button>
+                </details>
+                @if (statsLoading()) {
+                  <div class="side-panel-loading">
+                    <mat-spinner diameter="24" />
+                    <span>Loading stats…</span>
+                  </div>
+                } @else if (!documentStats()) {
+                  <div class="side-panel-empty">
+                    <mat-icon>analytics</mat-icon>
+                    <p>Could not load stats.</p>
+                  </div>
+                } @else {
+                  <div class="stat-row">
+                    <span class="stat-name">Words</span>
+                    <span class="stat-value">{{ documentStats()!.word_count }}</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-name">Characters</span>
+                    <span class="stat-value">{{ documentStats()!.char_count }}</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-name">Sentences</span>
+                    <span class="stat-value">{{ documentStats()!.sentence_count }}</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-name">Paragraphs</span>
+                    <span class="stat-value">{{ documentStats()!.paragraph_count }}</span>
+                  </div>
+                  <div class="stat-row">
+                    <span class="stat-name">Reading time</span>
+                    <span class="stat-value">{{ documentStats()!.estimated_reading_time_minutes }} min</span>
+                  </div>
+
+                  @if (readability()) {
+                    <div class="readability-section">
+                      <h4>Readability</h4>
+                      <div class="stat-row">
+                        <span class="stat-name">Flesch Reading Ease</span>
+                        <span class="stat-value">{{ readability()!.flesch_reading_ease }}</span>
+                      </div>
+                      <div class="stat-row">
+                        <span class="stat-name">Flesch-Kincaid Grade</span>
+                        <span class="stat-value">{{ readability()!.flesch_kincaid_grade }}</span>
+                      </div>
+                      @if (readability()!.suggestions.length > 0) {
+                        <ul class="suggestion-list">
+                          @for (suggestion of readability()!.suggestions; track $index) {
+                            <li>{{ suggestion }}</li>
+                          }
+                        </ul>
+                      }
+                    </div>
+                  }
+
+                  <div class="stats-export">
+                    <span>Export this document</span>
+                    <div class="export-buttons">
+                      <button mat-stroked-button (click)="exportDocument('docx')">Word</button>
+                      <button mat-stroked-button (click)="exportDocument('pdf')">PDF</button>
+                      <button mat-stroked-button (click)="exportDocument('markdown')">Markdown</button>
+                      <button mat-stroked-button (click)="exportDocument('html')">HTML</button>
+                      <button mat-stroked-button (click)="exportDocument('text')">Text</button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </aside>
+      }
+    </div>
+    <footer class="editor-statusbar" aria-label="Document status">
+      <span>{{ wordCount() }} words <span class="status-divider">·</span> {{ characterCount() }} characters <span class="status-divider">·</span> {{ pageCount() }} {{ pageCount() === 1 ? 'page' : 'pages' }}</span>
+      <div class="zoom-controls">
+        <button mat-icon-button (click)="changeZoom(-10)" aria-label="Zoom out"><mat-icon>remove</mat-icon></button>
+        <span>{{ fitPage() ? 'Fit page' : zoom() + '%' }}</span>
+        <button mat-icon-button (click)="changeZoom(10)" aria-label="Zoom in"><mat-icon>add</mat-icon></button>
+        <button mat-button (click)="fitPage.set(true)">Fit page</button>
+      </div>
+    </footer>
+  }
+</div>

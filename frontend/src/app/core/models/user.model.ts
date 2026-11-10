@@ -3,6 +3,6 @@ export interface AppUser {
   uid: string;
   name: string | null;
   email: string | null;
-  createdAt: string | null;
-  lastLoginAt: string | null;
+  created_at: string | null;
+  last_login_at: string | null;
 }

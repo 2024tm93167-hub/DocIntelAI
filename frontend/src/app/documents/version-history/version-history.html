@@ -1,0 +1,66 @@
+<section class="history" aria-label="Document version history">
+  @if (errorMessage()) {
+    <div class="history-error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button mat-stroked-button (click)="reload.emit()" [disabled]="busy()">Reload document and history</button>
+    </div>
+  }
+  @if (busy()) {
+    <p class="history-status" role="status">Updating version history…</p>
+  }
+  @if (loading()) {
+    <div class="history-empty" role="status">
+      <mat-spinner diameter="24" />
+      <p>Loading versions…</p>
+    </div>
+  } @else if (versions().length === 0) {
+    <div class="history-empty">
+      <mat-icon>history</mat-icon>
+      <h3>Your history starts here</h3>
+      <p>Save a named version to capture an important milestone.</p>
+    </div>
+  } @else {
+    <div class="comparison-control">
+      <label for="version-comparison">Compare a snapshot with</label>
+      <select id="version-comparison" [value]="compareTo()" (change)="selectComparison($event)" [disabled]="busy()">
+        <option value="">Current saved document</option>
+        @for (version of versions(); track version.id) {
+          <option [value]="version.id">{{ version.label || version.title }}</option>
+        }
+      </select>
+      <p>Choose a target above, then Compare on another snapshot.</p>
+      @if (unsaved()) {
+        <p role="status">Save your current edits before comparing against the document or restoring a version.</p>
+      }
+    </div>
+    <ol class="version-list">
+      @for (version of versions(); track version.id) {
+        <li class="version-item" [class.selected]="selected()?.id === version.id">
+          <button class="version-heading" (click)="selectVersion(version)" [attr.aria-expanded]="selected()?.id === version.id">
+            <h3 [title]="version.label || version.title">{{ version.label || version.title }}</h3>
+            <span class="source-label">{{ sourceLabels[version.source] }}</span>
+          </button>
+          <p class="version-meta">{{ version.word_count }} words · {{ version.created_at | relativeTime }}</p>
+          <p class="version-meta">Saved by {{ author(version) }}</p>
+          @if (version.document_revision > 0) {
+            <p class="version-meta">Document revision {{ version.document_revision }}</p>
+          }
+          @if (selected()?.id === version.id) {
+          @if (previewText()) { <p class="snapshot-preview">{{ previewText() }}</p> }
+          <div class="version-actions">
+            <button mat-stroked-button (click)="compareVersion(version)"
+              [disabled]="busy() || compareTo() === version.id || (unsaved() && !compareTo())"
+              [attr.aria-label]="'Compare ' + (version.label || version.title)">Compare</button>
+            <button mat-stroked-button (click)="restore.emit(version)" [disabled]="busy() || unsaved()"
+              [attr.aria-label]="'Restore ' + (version.label || version.title)">Restore</button>
+            <button mat-icon-button class="version-delete" (click)="remove.emit(version)" [disabled]="busy()"
+              matTooltip="Delete snapshot" [attr.aria-label]="'Delete version ' + (version.label || version.title)">
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+          }
+        </li>
+      }
+    </ol>
+  }
+</section>

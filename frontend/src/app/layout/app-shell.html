@@ -1,0 +1,107 @@
+<div class="shell" [class.collapsed]="collapsed()" [class.mobile-open]="mobileOpen()" [class.editor-route]="isActive('/documents/')">
+  @if (mobileOpen()) {
+    <div class="sidebar-backdrop" (click)="closeMobile()"></div>
+  }
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <button class="brand" (click)="goDashboard()" matTooltip="DocIntel AI">
+        <span class="brand-mark">DI</span>
+        @if (!collapsed() || mobileOpen()) {
+          <span class="brand-text">DocIntel AI</span>
+        }
+      </button>
+      <button
+        mat-icon-button
+        class="collapse-btn"
+        (click)="toggleCollapsed()"
+        [attr.aria-label]="collapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        [matTooltip]="collapsed() ? 'Expand' : 'Collapse'">
+        <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item" [class.active]="isActive('dashboard')" (click)="goDashboard()" matTooltip="Dashboard">
+        <mat-icon>dashboard</mat-icon>
+        @if (!collapsed() || mobileOpen()) { <span class="nav-label">Dashboard</span> }
+      </button>
+      <button class="nav-item" (click)="goNewDocument()" matTooltip="New document">
+        <mat-icon>add_circle_outline</mat-icon>
+        @if (!collapsed() || mobileOpen()) { <span class="nav-label">New document</span> }
+      </button>
+    </nav>
+
+    @if (!collapsed() || mobileOpen()) {
+      <div class="sidebar-section">
+        <div class="section-label">Workspace</div>
+        <button
+          class="nav-item"
+          [class.active]="docsExpanded()"
+          (click)="toggleDocuments()"
+          [attr.aria-expanded]="docsExpanded()"
+          aria-controls="sidebar-docs-list">
+          <mat-icon>description</mat-icon>
+          <span class="nav-label">Documents</span>
+          <mat-icon class="expand-icon">{{ docsExpanded() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+
+        @if (docsExpanded()) {
+          <div class="docs-list" id="sidebar-docs-list">
+            @if (docsLoading()) {
+              <div class="docs-state">Loading…</div>
+            } @else if (docsError()) {
+              <div class="docs-state">
+                Could not load documents.
+                <button class="docs-retry" (click)="loadSidebarDocs()">Retry</button>
+              </div>
+            } @else if (sidebarDocs().length === 0) {
+              <div class="docs-state">No documents yet</div>
+            } @else {
+              @for (doc of sidebarDocs(); track doc.id) {
+                <button
+                  class="doc-row"
+                  [class.active]="isActiveDoc(doc.id)"
+                  [title]="doc.title"
+                  (click)="openSidebarDoc(doc.id)">
+                  <span class="doc-title">{{ doc.title }}</span>
+                  <span class="doc-words">{{ doc.word_count }}w</span>
+                </button>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <div class="sidebar-footer">
+      <button class="nav-item account" [matMenuTriggerFor]="userMenu" matTooltip="Account">
+        <span class="avatar">{{ initials() }}</span>
+        @if (!collapsed() || mobileOpen()) {
+          <span class="account-info">
+            <span class="account-name">{{ user()?.name ?? 'Account' }}</span>
+            <span class="account-email">{{ user()?.email }}</span>
+          </span>
+        }
+      </button>
+      <mat-menu #userMenu="matMenu">
+        <div class="menu-user-info">
+          <strong>{{ user()?.name ?? 'Account' }}</strong>
+          <span>{{ user()?.email }}</span>
+        </div>
+        <button mat-menu-item (click)="toggleMetrics()"><mat-icon>analytics</mat-icon>{{ metricsEnabled() ? 'Stop research metrics' : 'Start research metrics' }}</button>
+        <button mat-menu-item (click)="exportMetrics()"><mat-icon>download</mat-icon>Export research metrics</button>
+        <button mat-menu-item (click)="logout()">
+          <mat-icon>logout</mat-icon>
+          <span>Sign out</span>
+        </button>
+      </mat-menu>
+    </div>
+  </aside>
+
+  <main class="shell-content">
+    <button class="mobile-menu-btn" (click)="toggleMobile()" aria-label="Toggle menu">
+      <mat-icon>menu</mat-icon>
+    </button>
+    <router-outlet />
+  </main>
+</div>

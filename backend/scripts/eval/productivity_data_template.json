@@ -1,0 +1,7 @@
+[
+  {"participant_id": "p1", "without_ai": {"wpm": 12.5, "perceived": 4}, "with_ai": {"wpm": 15.2, "perceived": 6}},
+  {"participant_id": "p2", "without_ai": {"wpm": 10.0, "perceived": 3}, "with_ai": {"wpm": 14.0, "perceived": 5}},
+  {"participant_id": "p3", "without_ai": {"wpm": 15.0, "perceived": 5}, "with_ai": {"wpm": 18.5, "perceived": 7}},
+  {"participant_id": "p4", "without_ai": {"wpm": 11.0, "perceived": 3}, "with_ai": {"wpm": 13.5, "perceived": 5}},
+  {"participant_id": "p5", "without_ai": {"wpm": 13.0, "perceived": 4}, "with_ai": {"wpm": 16.0, "perceived": 6}}
+]

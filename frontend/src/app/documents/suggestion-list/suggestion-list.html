@@ -1,0 +1,90 @@
+<section class="suggestions" aria-label="AI writing suggestions">
+  <div class="analysis-heading">
+    <h2>Writing suggestions</h2>
+    <p>Grammar, clarity and style recommendations for your saved document.</p>
+    <button mat-stroked-button (click)="analyze.emit()" [disabled]="analyzing() || busy() || unsaved()">
+      {{ analyzing() ? 'Analyzing your writing…' : (selectionActive() ? 'Analyze selection' : 'Analyze document') }}
+    </button>
+    @if (analyzing()) { <p role="status">Checking grammar, clarity and style…</p> }
+    @if (selectionActive()) {
+      <p class="unsaved-notice" role="status">Only the selected text will be analyzed.</p>
+    }
+  </div>
+  @if (errorMessage()) {
+    <div class="suggestions-error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button mat-stroked-button (click)="reload.emit()" [disabled]="busy()">Reload suggestions</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="suggestions-empty" role="status">
+      <mat-spinner diameter="24" />
+      <p>Loading suggestions…</p>
+    </div>
+  } @else {
+    <div class="filter-bar">
+      <button class="filter-chip" [class.active]="filter() === 'pending'" (click)="setFilter('pending')">
+        Pending ({{ counts().pending }})
+      </button>
+      <button class="filter-chip" [class.active]="filter() === 'accepted'" (click)="setFilter('accepted')">
+        Accepted ({{ counts().accepted }})
+      </button>
+      <button class="filter-chip" [class.active]="filter() === 'rejected'" (click)="setFilter('rejected')">
+        Rejected ({{ counts().rejected }})
+      </button>
+      <button class="filter-chip" [class.active]="filter() === 'all'" (click)="setFilter('all')">
+        All
+      </button>
+    </div>
+
+    @if (unsaved()) {
+      <p class="unsaved-notice" role="status">Save your edits before accepting suggestions.</p>
+    }
+
+    @if (filtered().length === 0) {
+      <div class="suggestions-empty">
+        <mat-icon>lightbulb_outline</mat-icon>
+        <h3>{{ analyzed() ? 'Looking good' : 'A fresh perspective on your writing' }}</h3>
+        <p>{{ analyzed() ? 'No active writing issues in this view. Analyze again after editing.' : 'Analyze your document to find grammar, clarity and style improvements.' }}</p>
+      </div>
+    } @else {
+      <ol class="suggestion-list">
+        @for (suggestion of filtered(); track suggestion.id) {
+          <li class="suggestion-item {{ statusClasses[suggestion.status] }}">
+            <div class="suggestion-heading">
+              <span class="type-label">{{ typeLabels[suggestion.type] || 'Suggestion' }}</span>
+              <span class="status-badge">{{ suggestion.status }}</span>
+            </div>
+            @if (suggestion.original_text) {
+              <span class="passage-label">Original</span><p class="suggestion-original">{{ suggestion.original_text }}</p>
+            }
+            @if (suggestion.suggested_text) {
+              <span class="passage-label">Suggested</span><p class="suggestion-suggested">{{ suggestion.suggested_text }}</p>
+            }
+            @if (suggestion.reason) {
+              <p class="suggestion-reason">{{ suggestion.reason }}</p>
+            }
+            <p class="suggestion-meta">Rev {{ suggestion.document_revision }} · {{ suggestion.created_at | relativeTime }}</p>
+            <div class="suggestion-actions">
+              @if (suggestion.status === 'pending') {
+                <button mat-stroked-button color="primary" (click)="onAccept(suggestion)"
+                  [disabled]="busy() || unsaved()"
+                  [attr.aria-label]="'Accept suggestion'">Accept</button>
+                <button mat-stroked-button (click)="onReject(suggestion)"
+                  [disabled]="busy()"
+                  [attr.aria-label]="'Dismiss suggestion'">Dismiss</button>
+              }
+              <button mat-icon-button class="suggestion-delete" (click)="onRemove(suggestion)"
+                [disabled]="busy()"
+                matTooltip="Delete suggestion"
+                [attr.aria-label]="'Delete suggestion'">
+                <mat-icon>delete_outline</mat-icon>
+              </button>
+            </div>
+          </li>
+        }
+      </ol>
+    }
+  }
+</section>

@@ -1,0 +1,66 @@
+<h2 mat-dialog-title>Share document</h2>
+<mat-dialog-content>
+  @if (error()) {
+    <p class="share-error" role="alert">{{ error() }}</p>
+  }
+
+  <div class="invite-form">
+    <mat-form-field appearance="outline" class="email-field">
+      <mat-label>Email address</mat-label>
+      <input matInput [formControl]="emailControl" type="email" placeholder="collaborator@example.com"
+        (keyup.enter)="submitInvite()" />
+      @if (emailControl.hasError('required') && emailControl.touched) {
+        <mat-error>Email is required</mat-error>
+      }
+      @if (emailControl.hasError('email') && emailControl.touched) {
+        <mat-error>Enter a valid email</mat-error>
+      }
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="role-field">
+      <mat-label>Role</mat-label>
+      <mat-select [formControl]="roleControl">
+        <mat-option value="viewer">Viewer (read only)</mat-option>
+        <mat-option value="editor">Editor (can edit)</mat-option>
+      </mat-select>
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="submitInvite()"
+      [disabled]="emailControl.invalid || inviting()">
+      @if (inviting()) {
+        <mat-spinner diameter="18" />
+      } @else {
+        Invite
+      }
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="share-loading"><mat-spinner diameter="24" /></div>
+  } @else if (collaborators().length > 0) {
+    <h3 class="collab-heading">People with access</h3>
+    <ul class="collab-list">
+      @for (collab of collaborators(); track collab.id) {
+        <li class="collab-item">
+          <div class="collab-info">
+            <span class="collab-name">{{ collab.name || collab.email || 'Unknown' }}</span>
+            @if (collab.email && collab.name) {
+              <span class="collab-email">{{ collab.email }}</span>
+            }
+            <span class="collab-role">{{ collab.role }}</span>
+            @if (collab.created_at) {
+              <span class="collab-meta">Added {{ collab.created_at | relativeTime }}</span>
+            }
+          </div>
+          <button mat-icon-button (click)="removeCollaborator(collab)" [disabled]="inviting()"
+            matTooltip="Remove access" aria-label="Remove collaborator">
+            <mat-icon>person_remove</mat-icon>
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="no-collabs">No collaborators yet. Invite someone above.</p>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Done</button>
+</mat-dialog-actions>

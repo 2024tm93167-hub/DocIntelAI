@@ -1,34 +1,21 @@
 <div class="dashboard-shell">
   <header class="dashboard-header">
-    <div class="brand">
-      <span class="brand-mark">DI</span>
-      <div>
-        <h1>DocIntel AI</h1>
-        <p>Intelligent Writing. Smarter Versions.</p>
-      </div>
+    <div class="page-title">
+      <h1>Dashboard</h1>
     </div>
 
     <div class="header-actions">
-      @if (!loading()) {
-        <button mat-icon-button [matMenuTriggerFor]="userMenu" aria-label="Account menu">
-          <span class="avatar">{{ initials() }}</span>
+      @if (!isLoading()) {
+        <button mat-stroked-button color="primary" (click)="createDocument()">
+          <mat-icon>add</mat-icon>
+          <span>New document</span>
         </button>
-        <mat-menu #userMenu="matMenu">
-          <div class="menu-user-info">
-            <strong>{{ user()?.name ?? 'Account' }}</strong>
-            <span>{{ user()?.email }}</span>
-          </div>
-          <button mat-menu-item (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Sign out</span>
-          </button>
-        </mat-menu>
       }
     </div>
   </header>
 
   <main class="dashboard-content">
-    @if (loading()) {
+    @if (isLoading()) {
       <div class="state-panel">
         <mat-spinner diameter="32" />
         <p>Loading your workspace…</p>
@@ -41,28 +28,168 @@
       </div>
     } @else {
       <section class="welcome-card docintel-card">
-        <h2>Welcome{{ user()?.name ? ', ' + user()?.name : '' }} 👋</h2>
-        <p>
-          Your AI-assisted document workspace is ready. Document creation, the rich-text editor and
-          version history arrive in the next build phase.
-        </p>
+        <h2>Welcome{{ user()?.name ? ', ' + user()?.name : '' }}</h2>
+        <p>Your documents are automatically saved as you work. Pick one below or create something new.</p>
       </section>
 
-      <section class="placeholder-grid">
-        <div class="docintel-card placeholder-card">
-          <mat-icon>description</mat-icon>
-          <h3>My Documents</h3>
-          <p>Coming in Phase 2 — create and manage your documents here.</p>
+      <section class="documents-section" #documentsSection>
+        <div class="section-heading">
+          <h3>Documents</h3>
+          <button mat-stroked-button color="primary" (click)="createDocument()">
+            <mat-icon>add</mat-icon>
+            Create new
+          </button>
         </div>
-        <div class="docintel-card placeholder-card">
+
+        <div class="toolbar">
+          <div class="search-field">
+            <mat-icon class="search-icon">search</mat-icon>
+            <input
+              class="search-input"
+              type="text"
+              placeholder="Search by title…"
+              [formControl]="searchControl"
+              aria-label="Search documents" />
+            @if (searchControl.value) {
+              <button mat-icon-button class="clear-search" (click)="clearSearch()" aria-label="Clear search">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+
+          <div class="filter-tabs">
+            <button class="filter-chip" [class.active]="activeFilter() === 'all'" (click)="setFilter('all')">
+              All ({{ counts().all }})
+            </button>
+            <button class="filter-chip" [class.active]="activeFilter() === 'owned'" (click)="setFilter('owned')">
+              Owned ({{ counts().owned }})
+            </button>
+            <button class="filter-chip" [class.active]="activeFilter() === 'shared'" (click)="setFilter('shared')">
+              Shared ({{ counts().shared }})
+            </button>
+          </div>
+
+          <div class="sort-controls">
+            <button class="sort-btn" [class.active]="sortKey() === 'updated'" (click)="setSortKey('updated')">
+              Updated {{ sortKey() === 'updated' ? (sortAsc() ? '↑' : '↓') : '' }}
+            </button>
+            <button class="sort-btn" [class.active]="sortKey() === 'title'" (click)="setSortKey('title')">
+              Title {{ sortKey() === 'title' ? (sortAsc() ? '↑' : '↓') : '' }}
+            </button>
+            <button class="sort-btn" [class.active]="sortKey() === 'words'" (click)="setSortKey('words')">
+              Words {{ sortKey() === 'words' ? (sortAsc() ? '↑' : '↓') : '' }}
+            </button>
+          </div>
+        </div>
+
+        @if (loadingDocuments()) {
+          <div class="state-panel">
+            <mat-spinner diameter="24" />
+            <p>Loading documents…</p>
+          </div>
+        } @else if (documents().length === 0) {
+          <div class="empty-state">
+            <mat-icon>description</mat-icon>
+            <h4>No documents yet</h4>
+            <p>Click "Create new" to start writing with the AI-assisted editor.</p>
+          </div>
+        } @else if (!hasResults()) {
+          <div class="empty-state">
+            <mat-icon>search_off</mat-icon>
+            <h4>No matching documents</h4>
+            <p>Try a different search term or filter.</p>
+            <button mat-stroked-button (click)="clearSearch(); setFilter('all')">Clear filters</button>
+          </div>
+        } @else {
+          <div class="document-grid">
+            @for (document of filteredDocuments(); track document.id) {
+              <article
+                class="docintel-card document-card"
+                role="link"
+                tabindex="0"
+                [routerLink]="['/documents', document.id]"
+                (keydown.enter)="openDocument(document.id)"
+                (keydown.space)="openDocument(document.id); $event.preventDefault()">
+                <div class="document-icon">
+                  <mat-icon>{{ isShared(document) ? 'shared' : 'description' }}</mat-icon>
+                </div>
+                <div class="document-meta">
+                  <h4 class="document-title" [title]="document.title">{{ document.title }}</h4>
+                  <div class="document-stats">
+                    <span>{{ document.word_count }} words</span>
+                    <span class="dot">·</span>
+                    <span>{{ document.updated_at | relativeTime }}</span>
+                    @if (isShared(document)) {
+                      <span class="dot">·</span>
+                      <span class="shared-badge">Shared</span>
+                    }
+                  </div>
+                </div>
+                @if (!isShared(document)) {
+                  <button
+                    mat-icon-button
+                    class="delete-button"
+                    [attr.aria-label]="'Delete ' + document.title"
+                    matTooltip="Delete"
+                    (click)="deleteDocument($event, document)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                } @else {
+                  <mat-icon class="shared-indicator" matTooltip="Shared with you">group</mat-icon>
+                }
+              </article>
+            }
+          </div>
+        }
+      </section>
+
+      @if (userStats()) {
+        <section class="analytics-grid">
+          <div
+            class="docintel-card stat-card stat-card--link"
+            role="button"
+            tabindex="0"
+            title="Jump to documents"
+            (click)="scrollToDocuments()"
+            (keydown.enter)="scrollToDocuments()"
+            (keydown.space)="scrollToDocuments(); $event.preventDefault()">
+            <mat-icon>description</mat-icon>
+            <span class="stat-value">{{ userStats()!.total_documents }}</span>
+            <span class="stat-label">Documents</span>
+          </div>
+          <div class="docintel-card stat-card">
+            <mat-icon>history</mat-icon>
+            <span class="stat-value">{{ userStats()!.total_versions }}</span>
+            <span class="stat-label">Versions</span>
+          </div>
+          <div class="docintel-card stat-card">
+            <mat-icon>subject</mat-icon>
+            <span class="stat-value">{{ userStats()!.total_words }}</span>
+            <span class="stat-label">Words</span>
+          </div>
+          <div class="docintel-card stat-card">
+            <mat-icon>av_timer</mat-icon>
+            <span class="stat-value">{{ userStats()!.average_words_per_document }}</span>
+            <span class="stat-label">Avg words / doc</span>
+          </div>
+        </section>
+      }
+
+      <section class="feature-grid">
+        <div class="docintel-card feature-card">
           <mat-icon>history</mat-icon>
           <h3>Version History</h3>
-          <p>Coming in Phase 3 — track every meaningful revision.</p>
+          <p>Save snapshots and compare them with a diff viewer.</p>
         </div>
-        <div class="docintel-card placeholder-card">
+        <div class="docintel-card feature-card">
           <mat-icon>auto_awesome</mat-icon>
           <h3>AI Assistant</h3>
-          <p>Coming in Phase 4 — rewrite, summarize and improve your writing.</p>
+          <p>Rewrite, summarize, improve, expand, and condense your writing.</p>
+        </div>
+        <div class="docintel-card feature-card">
+          <mat-icon>analytics</mat-icon>
+          <h3>Analytics & Export</h3>
+          <p>Track writing stats and export to Word, PDF, Markdown, HTML, or text.</p>
         </div>
       </section>
     }

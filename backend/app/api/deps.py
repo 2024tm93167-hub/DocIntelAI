@@ -14,7 +14,7 @@ class AuthenticatedUser(BaseModel):
     name: str | None = None
 
 
-async def get_current_user(authorization: str | None = Header(default=None)) -> AuthenticatedUser:
+def get_current_user(authorization: str | None = Header(default=None)) -> AuthenticatedUser:
     """Verify the Firebase ID token from the Authorization header.
 
     Expected header: ``Authorization: Bearer <firebase-id-token>``

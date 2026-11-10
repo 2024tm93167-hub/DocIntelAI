@@ -1,0 +1,445 @@
+:host {
+  display: block;
+  height: 100dvh;
+}
+
+.shell {
+  display: flex;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--docintel-surface, #fff);
+  border-right: 1px solid var(--docintel-border, #e0e0e0);
+  transition: width 0.2s ease;
+  overflow: hidden;
+}
+
+.shell.editor-route:not(.collapsed) .sidebar { width: 196px; }
+.shell.editor-route .brand-text { font-size: 12px; }
+.shell.collapsed .sidebar {
+  width: 64px;
+}
+.shell.collapsed .sidebar-header { flex-direction: column; padding: 8px; }
+.shell.collapsed .brand { padding: 0; }
+@media (min-width: 769px) and (max-width: 1100px) {
+  .shell.editor-route:not(.collapsed) .sidebar { width: 64px; }
+  .editor-route .brand-text, .editor-route .nav-label, .editor-route .sidebar-section, .editor-route .account-info { display: none; }
+  .editor-route .sidebar-header { flex-direction: column; padding: 8px; }
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--docintel-border, #e0e0e0);
+  min-height: 64px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 8px;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--docintel-surface-alt, #f5f5f5);
+  }
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--docintel-primary, #3b82f6), var(--docintel-accent, #8b5cf6));
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--docintel-text, #333);
+  white-space: nowrap;
+}
+
+.collapse-btn {
+  flex-shrink: 0;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  gap: 4px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--docintel-text-muted, #666);
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+
+  mat-icon {
+    flex-shrink: 0;
+    color: var(--docintel-text-muted, #888);
+  }
+
+  .nav-label {
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  &:hover {
+    background: var(--docintel-surface-alt, #f5f5f5);
+    color: var(--docintel-text, #333);
+
+    mat-icon { color: var(--docintel-primary, #3b82f6); }
+  }
+
+  &.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--docintel-primary, #3b82f6);
+    font-weight: 600;
+
+    mat-icon { color: var(--docintel-primary, #3b82f6); }
+  }
+}
+
+.sidebar-section {
+  padding: 12px 16px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.section-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--docintel-text-muted, #999);
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.expand-icon {
+  margin-left: auto;
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.doc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 7px 10px 7px 44px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--docintel-text-muted, #666);
+  text-align: left;
+  width: 100%;
+  transition: all 0.15s ease;
+
+  .doc-title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .doc-words {
+    font-size: 0.68rem;
+    color: var(--docintel-text-muted, #999);
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: var(--docintel-surface-alt, #f5f5f5);
+    color: var(--docintel-text, #333);
+  }
+
+  &.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--docintel-primary, #3b82f6);
+    font-weight: 600;
+  }
+}
+
+.docs-state {
+  padding: 8px 10px 8px 44px;
+  font-size: 0.76rem;
+  color: var(--docintel-text-muted, #999);
+}
+
+.docs-retry {
+  border: none;
+  background: transparent;
+  color: var(--docintel-primary, #3b82f6);
+  cursor: pointer;
+  font-size: 0.76rem;
+  padding: 2px 4px;
+  text-decoration: underline;
+}
+
+.quick-links {
+  .link-hint {
+    font-size: 0.76rem;
+    color: var(--docintel-text-muted, #999);
+    line-height: 1.4;
+  }
+}
+
+.metrics-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metrics-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--docintel-border, #e0e0e0);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  background: transparent;
+  cursor: pointer;
+  color: var(--docintel-text-muted, #666);
+  transition: all 0.15s ease;
+  width: 100%;
+  text-align: left;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: var(--docintel-surface-alt, #f5f5f5);
+  }
+
+  &.active {
+    color: #4caf50;
+    border-color: #4caf50;
+
+    mat-icon { color: #4caf50; }
+  }
+}
+
+.metrics-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 0.76rem;
+  background: transparent;
+  cursor: pointer;
+  color: var(--docintel-primary, #3b82f6);
+  transition: background 0.15s;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background: rgba(59, 130, 246, 0.08);
+  }
+}
+
+.sidebar-footer {
+  padding: 8px;
+  margin-top: auto;
+  border-top: 1px solid var(--docintel-border, #e0e0e0);
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-item.account {
+  width: 100%;
+  padding: 8px 12px;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--docintel-primary, #3b82f6);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.78rem;
+  flex-shrink: 0;
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+
+  .account-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--docintel-text, #333);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+
+  .account-email {
+    font-size: 0.7rem;
+    color: var(--docintel-text-muted, #999);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+  }
+}
+
+.menu-user-info {
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  span {
+    font-size: 0.78rem;
+    color: var(--docintel-text-muted, #888);
+  }
+}
+
+.shell-content {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* Collapsed state adjustments */
+.shell.collapsed {
+  .nav-item {
+    justify-content: center;
+    padding: 10px 8px;
+
+    .nav-label { display: none; }
+  }
+
+  .nav-item.account {
+    justify-content: center;
+  }
+}
+
+/* Mobile: hide sidebar, show as overlay */
+.mobile-menu-btn {
+  display: none;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+    transform: translateX(0);
+    transition: transform 0.25s ease;
+  }
+
+  .shell .sidebar, .shell.collapsed .sidebar {
+    transform: translateX(-100%);
+    width: 240px;
+  }
+  .shell.mobile-open .sidebar { transform: translateX(0); }
+  .shell.mobile-open .nav-item { justify-content: flex-start; }
+  .shell.mobile-open .nav-label { display: inline; }
+
+  .shell-content {
+    width: 100%;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 50;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    background: var(--docintel-surface, #fff);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    cursor: pointer;
+    color: var(--docintel-text, #333);
+
+    mat-icon {
+      font-size: 22px;
+      width: 22px;
+      height: 22px;
+    }
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(0, 0, 0, 0.4);
+  }
+}

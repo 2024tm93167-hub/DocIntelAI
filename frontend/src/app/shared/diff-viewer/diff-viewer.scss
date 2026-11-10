@@ -1,0 +1,32 @@
+.diff-content {
+  min-width: 520px;
+  max-width: 720px;
+  max-height: 70dvh;
+  overflow-y: auto;
+}
+
+.diff-chunks {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-family: var(--docintel-font);
+}
+
+.chunk {
+  border-radius: 3px;
+  padding: 1px 2px;
+
+  &.equal {
+    color: var(--docintel-text);
+  }
+
+  &.insert {
+    background: rgba(34, 197, 94, 0.18);
+    color: #15803d;
+    text-decoration: none;
+  }
+
+  &.delete {
+    background: rgba(239, 68, 68, 0.12);
+    color: #b91c1c;
+  }
+}

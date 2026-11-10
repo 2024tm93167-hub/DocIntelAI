@@ -1,0 +1,25 @@
+<h2 mat-dialog-title>Compare versions</h2>
+<mat-dialog-content class="diff-content">
+  <div class="diff-chunks">
+    @for (chunk of data.chunks; track $index) {
+      @switch (chunk.op) {
+        @case ('equal') {
+          <span class="chunk equal">{{ chunk.old_text }}</span>
+        }
+        @case ('insert') {
+          <ins class="chunk insert">{{ chunk.new_text }}</ins>
+        }
+        @case ('delete') {
+          <del class="chunk delete">{{ chunk.old_text }}</del>
+        }
+        @case ('replace') {
+          <del class="chunk delete">{{ chunk.old_text }}</del>
+          <ins class="chunk insert">{{ chunk.new_text }}</ins>
+        }
+      }
+    }
+  </div>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</mat-dialog-actions>

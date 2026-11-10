@@ -18,9 +18,21 @@ def documents_collection() -> CollectionReference:
     return get_firestore().collection("documents")
 
 
+def versions_collection() -> CollectionReference:
+    return get_firestore().collection("versions")
+
+
 def editing_sessions_collection() -> CollectionReference:
     return get_firestore().collection("editingSessions")
 
 
 def evaluation_responses_collection() -> CollectionReference:
     return get_firestore().collection("evaluationResponses")
+
+
+def suggestions_collection() -> CollectionReference:
+    return get_firestore().collection("suggestions")
+
+
+def collaborators_collection() -> CollectionReference:
+    return get_firestore().collection("documentCollaborators")
