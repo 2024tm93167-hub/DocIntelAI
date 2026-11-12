@@ -33,6 +33,11 @@ jobs:
             npm ci
             npm run build
 
+            # Publish build for nginx (www-data cannot read /home/ubuntu)
+            sudo rm -rf /var/www/docintel/browser
+            sudo cp -r /home/ubuntu/docintel/frontend/dist/frontend/browser /var/www/docintel/
+            sudo chown -R www-data:www-data /var/www/docintel
+
             # Update backend dependencies and restart
             cd /home/ubuntu/docintel/backend
             source .venv/bin/activate

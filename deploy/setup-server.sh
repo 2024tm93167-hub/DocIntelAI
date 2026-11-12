@@ -52,6 +52,12 @@ cd /home/ubuntu/docintel/frontend
 npm ci
 npm run build
 
+# nginx (www-data) cannot read /home/ubuntu — publish the build to /var/www
+sudo mkdir -p /var/www/docintel
+sudo rm -rf /var/www/docintel/browser
+sudo cp -r /home/ubuntu/docintel/frontend/dist/frontend/browser /var/www/docintel/
+sudo chown -R www-data:www-data /var/www/docintel
+
 echo "==> Starting backend"
 sudo systemctl restart docintel-backend
 sleep 3
